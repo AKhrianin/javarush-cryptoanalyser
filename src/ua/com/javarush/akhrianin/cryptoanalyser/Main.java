@@ -4,23 +4,18 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
-
-    private static final char[] ALPHABET = {'а', 'б', 'в', 'г', 'д', 'е', 'ж', 'з',
-            'и', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
-            'ъ', 'ы', 'ь', 'э', 'я', '.', ',', '«', '»', '"', '\'', ':', '!', '?', ' '};
 
     public static void main(String[] args) {
 
         Scanner input = new Scanner(System.in);
         int count = 0;
         int maxTries = 3;
+
         while (true) {
-            try {
+
                 System.out.println(ProgramDialog.GREETING_MESSAGE.toUpperCase(Locale.ROOT));
                 System.out.println(ProgramDialog.WORKING_MODE1_MESSAGE);
                 System.out.println(ProgramDialog.WORKING_MODE2_MESSAGE);
@@ -29,64 +24,92 @@ public class Main {
 
                 String in = input.nextLine();
 
-                if (in.equals("1")) {
-                    String fileName = readFilePath(input, System.out, "Введите путь к файлу для шифровки");
-                    encode(fileName);
+                switch (in) {
+                    case "1" -> {
+                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для шифровки");
+                        encode(filePath, input);
 
-                } else if (in.equals("2")) {
-                    String fileName = readFilePath(input, System.out, "Введите путь к файлу для расшифровки");
-                    decode(fileName);
+                    }
+                    case "2" -> {
+                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для расшифровки");
+                        decode(filePath, input);
 
-                } else if (in.equals("3")) {
-                    String fileName = readFilePath(input, System.out, "Введите путь к файлу для взлома");
-                    decodeBruteForce(fileName);
+                    }
+                    case "3" -> {
+                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для взлома");
+                        decodeBruteForce(filePath, input);
 
-                } else if (in.equals("4")) {
-                    System.exit(0);
-                } else {
-                    throw new IllegalArgumentException("Введена неверная опция! Выберите от 1 до 4!");
+                    }
+                    case "4" -> System.exit(0);
+                    default -> throw new IllegalArgumentException("Введена неверная опция! Выберите от 1 до 4!");
                 }
-
-            } catch (IllegalArgumentException ex) {
-                System.out.println(ex.getMessage());
-                if (++count == maxTries) throw ex;//this block should be improved
-            }
-
         }
     }
-    private static String readFilePath (Scanner input, PrintStream output, String message){
+
+
+
+    private static Path readFilePath (Scanner input, PrintStream output, String message) {
         output.println(message);
         String fileInput = input.nextLine();
+        Path filePath;
         try {
-            Path filePath = Path.of(fileInput);
-            if (!filePath.isAbsolute()){
+            filePath = Path.of(fileInput);
+            if (!filePath.isAbsolute()) {
                 throw new IllegalArgumentException("Неверно указан путь к файлу! Введите абсолютный путь!");
             }
-            if (!Files.isReadable(filePath)){
-                throw new IllegalArgumentException("Файл не может быть прочитан!");
-            }
-            if (!Files.isWritable(filePath)){
-                throw new IllegalArgumentException("В файл невозможно произвести запись!");
-            }
 
-        } catch (InvalidPathException e){
+        } catch (InvalidPathException e) {
             throw new IllegalArgumentException("Неверно указан путь к файлу", e);
         }
-        return fileInput;
+        return filePath;
     }
 
-    private static void encode(String fileName){
+    private static void encode(Path filePath, Scanner input){
+        System.out.println("Введите ключ от 1 до 39");
+        int key = validateKey(input);
+        try {List<String> fileText = Files.readAllLines(filePath);//reading from file
+            char[] fileToChar = fileText.toString().toCharArray();//parse to char
+            List<Character> alphabetForEncryption = Alphabet.getAlphabet();//create copy of alphabet
+            Collections.rotate(alphabetForEncryption, key);
+            //System.out.println(alphabetForEncryption);
+            //System.out.println(Alphabet.getAlphabet());
+            for (int i = 0; i < fileToChar.length; i++) {
+                int index = Alphabet.getAlphabet().indexOf(fileToChar[i]);//проверяем, есть ли в алфавите и возвр индекс
+                if (index > -1){
+                    fileToChar[i] = alphabetForEncryption.get(index);
+                    }
+                else continue;
+            }
+            System.out.println(Arrays.toString(fileToChar));
+
+        } catch (IOException e){
+            throw new IllegalArgumentException("Файл не найден:" + filePath + e.getMessage());
+        }
+
+
 
         }
 
-    private static void decode(String fileName){
+    private static void decode(Path filePath, Scanner input){
 
         }
 
-    private static void decodeBruteForce(String fileName){
+    private static void decodeBruteForce(Path filePath, Scanner input){
 
     }
+    private static int validateKey(Scanner input){
+        Integer key = null;
+        try {
+            key = Integer.valueOf(input.nextLine());
 
+            if (key < 1 || key > 39) {
+                throw new IllegalArgumentException("Введённый ключ не соответствует дианазону!");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Неверный формат ключа, используйте число!");
+        }
+        return key;
+    }
 
 
 
