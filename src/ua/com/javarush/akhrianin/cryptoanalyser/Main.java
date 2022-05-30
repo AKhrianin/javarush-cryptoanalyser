@@ -11,8 +11,6 @@ public class Main {
     public static void main(String[] args) {
 
         Scanner input = new Scanner(System.in);
-        int count = 0;
-        int maxTries = 3;
 
         while (true) {
 
@@ -68,19 +66,34 @@ public class Main {
         System.out.println("Введите ключ от 1 до 39");
         int key = validateKey(input);
         try {List<String> fileText = Files.readAllLines(filePath);//reading from file
-            char[] fileToChar = fileText.toString().toCharArray();//parse to char
+
             List<Character> alphabetForEncryption = Alphabet.getAlphabet();//create copy of alphabet
             Collections.rotate(alphabetForEncryption, key);
-            //System.out.println(alphabetForEncryption);
-            //System.out.println(Alphabet.getAlphabet());
-            for (int i = 0; i < fileToChar.length; i++) {
-                int index = Alphabet.getAlphabet().indexOf(fileToChar[i]);//проверяем, есть ли в алфавите и возвр индекс
-                if (index > -1){
-                    fileToChar[i] = alphabetForEncryption.get(index);
+
+            StringBuilder outgoStringBuilder = new StringBuilder();
+
+            for (int i = 0; i < fileText.size(); i++) {
+                String incomeString = fileText.get(i);
+                for (int j = 0; j < incomeString.length(); j++) {
+                    int index = Alphabet.getAlphabet().indexOf(incomeString.charAt(j));
+                    if (index > -1){
+                        outgoStringBuilder.append(alphabetForEncryption.get(index));
                     }
-                else continue;
+                }
+                fileText.set(i,outgoStringBuilder.toString());
+                outgoStringBuilder.delete(0,outgoStringBuilder.length());
             }
-            System.out.println(Arrays.toString(fileToChar));
+            System.out.println("encrypted text:" + fileText);
+            //List<String> lines = Collections.singletonList(Arrays.toString(fileToChar));//при переводе в лист раделяет запятой
+
+/*            try {
+                Files.write(filePath,lines);
+                System.out.println("файл зашифрован!");
+            } catch (FileNotFoundException e) {
+                throw new IllegalArgumentException("Что-то пошло не так");//очень плохо
+            }
+*/
+
 
         } catch (IOException e){
             throw new IllegalArgumentException("Файл не найден:" + filePath + e.getMessage());

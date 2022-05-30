@@ -2,6 +2,7 @@ package ua.com.javarush.akhrianin.cryptoanalyser;
 
 
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,8 +14,11 @@ public final class Alphabet {
             'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я', '.', ',', '«', '»',
             ':', '!', '?', ' ');
 
+    private Alphabet() {
+    }
+
     public static List<Character> getAlphabet(){
-        return ALPHABET;
+        return new ArrayList<>(ALPHABET);
     }
 }
 
