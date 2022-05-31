@@ -13,41 +13,113 @@ public class Main {
         Scanner input = new Scanner(System.in);
 
         while (true) {
+            System.out.println(ProgramDialog.GREETING_MESSAGE);
+            System.out.println(ProgramDialog.WORKING_MODE1_MESSAGE);
+            System.out.println(ProgramDialog.WORKING_MODE2_MESSAGE);
+            System.out.println(ProgramDialog.WORKING_MODE3_MESSAGE);
+            System.out.println(ProgramDialog.WORKING_MODE4_MESSAGE);
 
-                System.out.println(ProgramDialog.GREETING_MESSAGE.toUpperCase(Locale.ROOT));
-                System.out.println(ProgramDialog.WORKING_MODE1_MESSAGE);
-                System.out.println(ProgramDialog.WORKING_MODE2_MESSAGE);
-                System.out.println(ProgramDialog.WORKING_MODE3_MESSAGE);
-                System.out.println(ProgramDialog.WORKING_MODE4_MESSAGE);
-
-                String in = input.nextLine();
-
-                switch (in) {
-                    case "1" -> {
-                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для шифровки");
-                        encode(filePath, input);
-
-                    }
-                    case "2" -> {
-                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для расшифровки");
-                        decode(filePath, input);
-
-                    }
-                    case "3" -> {
-                        Path filePath = readFilePath(input, System.out, "Введите путь к файлу для взлома");
-                        decodeBruteForce(filePath, input);
-
-                    }
-                    case "4" -> System.exit(0);
-                    default -> throw new IllegalArgumentException("Введена неверная опция! Выберите от 1 до 4!");
-                }
+            workingModeSelector(input);
         }
     }
 
+    private static void encode(Path filePath, Scanner input) {
+        System.out.println("Введите ключ от 1 до 39");
+
+        int key = validateKey(input);
+
+        List<String> fileText = readFile(filePath);
+
+        codingProcessor(key, fileText);
+
+        writeFile(filePath, fileText);
+        System.out.println("Файл записан:" + filePath);
+    }
+
+    private static void decode(Path filePath, Scanner input) {
+        System.out.println("Введите ключ от 1 до 39");
+
+        int key = validateKey(input);
+
+        List<String> fileText = readFile(filePath);
+
+        codingProcessor(-key, fileText);
+
+        writeFile(filePath, fileText);
+        System.out.println("Файл записан:" + filePath);
+    }
+
+    private static void decodeBruteForce(Path filePath) {
+        List<String> fileText = readFile(filePath);
+
+        List<Character> alphabet = Alphabet.getAlphabet();
+        List<Character> alphabetForDecryption = Alphabet.getAlphabet();
+
+        for (int i = 0; i < alphabet.size(); i++) {
+            List<String> checkList = new ArrayList<>();//новый лист, куда пишем попытки для проверки
+            Collections.rotate(alphabetForDecryption, i);
+
+            for (int j = 0; j < fileText.size(); j++) {
+                String incomeString = fileText.get(j);//получили субстроку
+                StringBuilder buffer = new StringBuilder();//буфер для чтения
+
+                for (int k = 0; k < incomeString.length(); k++) {//проходим по субстроке
+                    int index = alphabet.indexOf(incomeString.charAt(k));//проверяем есть ли буква в алфавите
+                    if (index > -1) {//если есть
+                        buffer.append(alphabetForDecryption.get(index));//заполняем буфер
+                    }
+                }
+                checkList.set(j, buffer.toString());//пишем в проверочный лист
+            }
+            //тут должна быть логика сверки полученного листа с эталонным списком
 
 
-    private static Path readFilePath (Scanner input, PrintStream output, String message) {
-        output.println(message);
+        }
+
+        writeFile(filePath, checkList);
+        System.out.println("Файл расшифрован:" + filePath);
+    }
+
+    private static int validateKey(Scanner input) {
+        int key = 0;
+        try {
+            key = Integer.parseInt(input.nextLine());
+
+            if (key < 1 || key > 39) {
+                throw new IllegalArgumentException("Введённый ключ не соответствует дианазону!");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Введённый ключ не соответствует дианазону!");
+        }
+        return key;
+    }
+
+    private static void workingModeSelector(Scanner input) {
+        String mode = input.nextLine();
+
+        switch (mode) {
+            case "1" -> {
+                Path filePath = readFilePath(input, "Введите путь к файлу для шифровки");
+                encode(filePath, input);
+
+            }
+            case "2" -> {
+                Path filePath = readFilePath(input, "Введите путь к файлу для расшифровки");
+                decode(filePath, input);
+
+            }
+            case "3" -> {
+                Path filePath = readFilePath(input, "Введите путь к файлу для взлома");
+                decodeBruteForce(filePath);
+
+            }
+            case "4" -> System.exit(0);
+            default -> throw new IllegalArgumentException("Введена неверная опция! Выберите от 1 до 4!");
+        }
+    }
+
+    private static Path readFilePath(Scanner input, String message) {
+        System.out.println(message);
         String fileInput = input.nextLine();
         Path filePath;
         try {
@@ -57,80 +129,46 @@ public class Main {
             }
 
         } catch (InvalidPathException e) {
-            throw new IllegalArgumentException("Неверно указан путь к файлу", e);
+            throw new RuntimeException("Неверно указан путь к файлу:" + e);
         }
         return filePath;
     }
 
-    private static void encode(Path filePath, Scanner input){
-        System.out.println("Введите ключ от 1 до 39");
-        int key = validateKey(input);
-        try {List<String> fileText = Files.readAllLines(filePath);//reading from file
-
-            List<Character> alphabetForEncryption = Alphabet.getAlphabet();//create copy of alphabet
-            Collections.rotate(alphabetForEncryption, key);
-
-            StringBuilder outgoStringBuilder = new StringBuilder();
-
-            for (int i = 0; i < fileText.size(); i++) {
-                String incomeString = fileText.get(i);
-                for (int j = 0; j < incomeString.length(); j++) {
-                    int index = Alphabet.getAlphabet().indexOf(incomeString.charAt(j));
-                    if (index > -1){
-                        outgoStringBuilder.append(alphabetForEncryption.get(index));
-                    }
-                }
-                fileText.set(i,outgoStringBuilder.toString());
-                outgoStringBuilder.delete(0,outgoStringBuilder.length());
-            }
-            System.out.println("encrypted text:" + fileText);
-            //List<String> lines = Collections.singletonList(Arrays.toString(fileToChar));//при переводе в лист раделяет запятой
-
-/*            try {
-                Files.write(filePath,lines);
-                System.out.println("файл зашифрован!");
-            } catch (FileNotFoundException e) {
-                throw new IllegalArgumentException("Что-то пошло не так");//очень плохо
-            }
-*/
-
-
-        } catch (IOException e){
-            throw new IllegalArgumentException("Файл не найден:" + filePath + e.getMessage());
-        }
-
-
-
-        }
-
-    private static void decode(Path filePath, Scanner input){
-
-        }
-
-    private static void decodeBruteForce(Path filePath, Scanner input){
-
-    }
-    private static int validateKey(Scanner input){
-        Integer key = null;
+    private static void writeFile(Path filePath, List<String> fileText) {
         try {
-            key = Integer.valueOf(input.nextLine());
-
-            if (key < 1 || key > 39) {
-                throw new IllegalArgumentException("Введённый ключ не соответствует дианазону!");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Неверный формат ключа, используйте число!");
+            Files.write(filePath, fileText);
+        } catch (IOException e) {
+            throw new RuntimeException("Файл не может быть записан:" + filePath + e);
         }
-        return key;
     }
 
+    private static List<String> readFile(Path filePath) {
+        List<String> fileText;
+        try {
+            fileText = Files.readAllLines(filePath);
 
+        } catch (IOException e) {
+            throw new RuntimeException("Файл не может быть записан:" + filePath + e.getMessage());
+        }
+        return fileText;
+    }
 
+    private static void codingProcessor(int key, List<String> fileText) {
+        List<Character> alphabetForEncryption = Alphabet.getAlphabet();
+        Collections.rotate(alphabetForEncryption, key);
 
-
-
-
-
+        for (int i = 0; i < fileText.size(); i++) {
+            String incomeString = fileText.get(i);
+            StringBuilder outgoStringBuilder = new StringBuilder();
+            for (int j = 0; j < incomeString.length(); j++) {
+                int index = Alphabet.getAlphabet().indexOf(incomeString.charAt(j));
+                if (index > -1) {
+                    outgoStringBuilder.append(alphabetForEncryption.get(index));
+                }
+            }
+            fileText.set(i, outgoStringBuilder.toString());
+        }
+    }
 }
 
 
