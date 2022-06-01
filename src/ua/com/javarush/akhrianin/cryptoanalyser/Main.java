@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class Main {
@@ -18,13 +19,14 @@ public class Main {
             System.out.println(ProgramDialog.WORKING_MODE2_MESSAGE);
             System.out.println(ProgramDialog.WORKING_MODE3_MESSAGE);
             System.out.println(ProgramDialog.WORKING_MODE4_MESSAGE);
+            System.out.println();
 
             workingModeSelector(input);
         }
     }
 
     private static void encode(Path filePath, Scanner input) {
-        System.out.println("Введите ключ от 1 до 39");
+        System.out.println(ProgramDialog.KEY_SELECTION_MESSAGE);
 
         int key = validateKey(input);
 
@@ -33,11 +35,11 @@ public class Main {
         codingProcessor(key, fileText);
 
         writeFile(filePath, fileText);
-        System.out.println("Файл записан:" + filePath);
+        System.out.println(ProgramDialog.FILE_WRITE_MESSAGE + filePath);
     }
 
     private static void decode(Path filePath, Scanner input) {
-        System.out.println("Введите ключ от 1 до 39");
+        System.out.println(ProgramDialog.KEY_SELECTION_MESSAGE);
 
         int key = validateKey(input);
 
@@ -46,38 +48,51 @@ public class Main {
         codingProcessor(-key, fileText);
 
         writeFile(filePath, fileText);
-        System.out.println("Файл записан:" + filePath);
+        System.out.println(ProgramDialog.FILE_WRITE_MESSAGE + filePath);
     }
 
-    private static void decodeBruteForce(Path filePath) {
+    private static void decodeBruteForce(Path filePath, Scanner input) {
         List<String> fileText = readFile(filePath);
 
         List<Character> alphabet = Alphabet.getAlphabet();
         List<Character> alphabetForDecryption = Alphabet.getAlphabet();
 
+        System.out.println(ProgramDialog.DIRECTORY_SELECTION_MESSAGE);
+        String dirForResults = input.nextLine();
+
         for (int i = 0; i < alphabet.size(); i++) {
-            List<String> checkList = new ArrayList<>();//новый лист, куда пишем попытки для проверки
-            Collections.rotate(alphabetForDecryption, i);
+            List<String> checkList = new ArrayList<>();
+            Collections.rotate(alphabetForDecryption, 1);
 
             for (int j = 0; j < fileText.size(); j++) {
-                String incomeString = fileText.get(j);//получили субстроку
-                StringBuilder buffer = new StringBuilder();//буфер для чтения
+                String incomeString = fileText.get(j);
+                StringBuilder buffer = new StringBuilder();
 
-                for (int k = 0; k < incomeString.length(); k++) {//проходим по субстроке
-                    int index = alphabet.indexOf(incomeString.charAt(k));//проверяем есть ли буква в алфавите
-                    if (index > -1) {//если есть
-                        buffer.append(alphabetForDecryption.get(index));//заполняем буфер
+                for (int k = 0; k < incomeString.length(); k++) {
+                    int index = alphabet.indexOf(incomeString.charAt(k));
+                    if (index > -1) {
+                        buffer.append(alphabetForDecryption.get(index));
                     }
                 }
-                checkList.set(j, buffer.toString());//пишем в проверочный лист
+                checkList.add(j, buffer.toString());
+
+                String resultFilePath = dirForResults + "/" + i + ".txt";
+                try {
+                    Path path = Paths.get(resultFilePath);
+                    writeFile(path, checkList);
+                    System.out.println(ProgramDialog.FILE_WRITE_MESSAGE + path);
+                    if (Files.isExecutable(path)){
+                        throw new IllegalArgumentException(ProgramDialog.SYSTEM_PATH_ERROR_MESSAGE);
+                    }
+                    if (!path.isAbsolute()){
+                        throw new IllegalArgumentException(ProgramDialog.ABSOLUTE_PATH_ERROR_MESSAGE);
+                    }
+
+                } catch (InvalidPathException e) {
+                    throw new RuntimeException(ProgramDialog.PATH_ERROR_MESSAGE + e);
+                }
             }
-            //тут должна быть логика сверки полученного листа с эталонным списком
-
-
         }
-
-        writeFile(filePath, checkList);
-        System.out.println("Файл расшифрован:" + filePath);
     }
 
     private static int validateKey(Scanner input) {
@@ -86,10 +101,10 @@ public class Main {
             key = Integer.parseInt(input.nextLine());
 
             if (key < 1 || key > 39) {
-                throw new IllegalArgumentException("Введённый ключ не соответствует дианазону!");
+                throw new IllegalArgumentException(ProgramDialog.VALIDATE_KEY_ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            System.out.println("Введённый ключ не соответствует дианазону!");
+            System.out.println(ProgramDialog.VALIDATE_KEY_ERROR_MESSAGE);
         }
         return key;
     }
@@ -99,22 +114,22 @@ public class Main {
 
         switch (mode) {
             case "1" -> {
-                Path filePath = readFilePath(input, "Введите путь к файлу для шифровки");
+                Path filePath = readFilePath(input, ProgramDialog.MODE1_DIALOG_MESSAGE);
                 encode(filePath, input);
 
             }
             case "2" -> {
-                Path filePath = readFilePath(input, "Введите путь к файлу для расшифровки");
+                Path filePath = readFilePath(input, ProgramDialog.MODE2_DIALOG_MESSAGE);
                 decode(filePath, input);
 
             }
             case "3" -> {
-                Path filePath = readFilePath(input, "Введите путь к файлу для взлома");
-                decodeBruteForce(filePath);
+                Path filePath = readFilePath(input, ProgramDialog.MODE3_DIALOG_MESSAGE);
+                decodeBruteForce(filePath, input);
 
             }
             case "4" -> System.exit(0);
-            default -> throw new IllegalArgumentException("Введена неверная опция! Выберите от 1 до 4!");
+            default -> throw new IllegalArgumentException(ProgramDialog.MODE4_ERROR_MESSAGE);
         }
     }
 
@@ -125,11 +140,11 @@ public class Main {
         try {
             filePath = Path.of(fileInput);
             if (!filePath.isAbsolute()) {
-                throw new IllegalArgumentException("Неверно указан путь к файлу! Введите абсолютный путь!");
+                throw new IllegalArgumentException(ProgramDialog.ABSOLUTE_PATH_ERROR_MESSAGE);
             }
 
         } catch (InvalidPathException e) {
-            throw new RuntimeException("Неверно указан путь к файлу:" + e);
+            throw new RuntimeException(ProgramDialog.PATH_ERROR_MESSAGE + e);
         }
         return filePath;
     }
@@ -138,7 +153,7 @@ public class Main {
         try {
             Files.write(filePath, fileText);
         } catch (IOException e) {
-            throw new RuntimeException("Файл не может быть записан:" + filePath + e);
+            throw new RuntimeException(ProgramDialog.FILE_PROCESSING_ERROR_MESSAGE + filePath + e);
         }
     }
 
@@ -148,7 +163,7 @@ public class Main {
             fileText = Files.readAllLines(filePath);
 
         } catch (IOException e) {
-            throw new RuntimeException("Файл не может быть записан:" + filePath + e.getMessage());
+            throw new RuntimeException(ProgramDialog.FILE_PROCESSING_ERROR_MESSAGE + filePath + e.getMessage());
         }
         return fileText;
     }
